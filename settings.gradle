@@ -1,3 +1,4 @@
 rootProject.name = 'terra'
 include 'server'
+include 'protobufs'
 
