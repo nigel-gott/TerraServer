@@ -1,0 +1,12 @@
+group 'com.nigelgott'
+version '0.1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+repositories {
+    mavenCentral()
+}

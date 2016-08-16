@@ -1,0 +1,3 @@
+rootProject.name = 'terra'
+include 'server'
+
