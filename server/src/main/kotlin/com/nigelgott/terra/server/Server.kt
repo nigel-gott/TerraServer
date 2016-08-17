@@ -1,11 +1,7 @@
 package com.nigelgott.terra.server
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.PrintWriter
+import org.slf4j.LoggerFactory
 import java.net.ServerSocket
-import com.nigelgott.terra.protobufs.Heightmap.HeightMapMessage
-import com.nigelgott.terra.protobufs.Request
 import java.util.concurrent.Executors
 
 fun main(args : Array<String>){
@@ -13,19 +9,28 @@ fun main(args : Array<String>){
 
     val serverSocket = ServerSocket(port)
 
-    print("Listening on port $port")
+    val logger = LoggerFactory.getLogger("Main")
+    logger.info("Listening on port $port")
+
+    val executor = Executors.newCachedThreadPool()
+
+    val worldState = WorldState();
 
     try {
-        val executor = Executors.newCachedThreadPool()
         while(true){
             val clientSocket = serverSocket.accept()
+            clientSocket.tcpNoDelay = true;
             try {
+                logger.info("New connection opened: $clientSocket")
                 executor.submit(RequestHandler(clientSocket))
             } catch (e : Exception) {
-                clientSocket.close();
+                clientSocket.close()
+                throw RuntimeException(e)
             }
         }
     } finally {
+        executor.shutdown()
         serverSocket.close()
     }
 }
+

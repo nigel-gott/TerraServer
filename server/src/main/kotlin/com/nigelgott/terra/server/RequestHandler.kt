@@ -4,30 +4,42 @@ import com.nigelgott.terra.protobufs.Heightmap
 import com.nigelgott.terra.protobufs.Request
 import java.net.Socket
 
-class RequestHandler(val clientSocket: Socket) : Runnable {
+class RequestHandler(val clientSocket: Socket) : Runnable, Loggable {
+
+    val logger = logger()
+
     override fun run() {
+        logger.info("RequestHandler handling $clientSocket")
         try {
-            val requestMessage = Request.RequestMessage.parseFrom(clientSocket.inputStream)
+            val requestMessage = Request.RequestMessage.parseDelimitedFrom(clientSocket.inputStream)
             when (requestMessage.type) {
-                Request.RequestMessage.RequestType.INITIAL_WORLD_STATE -> returnCurrentWorldState(clientSocket)
-                else -> Unit
+                Request.RequestMessage.RequestType.INITIAL_WORLD_STATE -> returnCurrentWorldState()
+                else -> logger.error("Request Message $requestMessage from $clientSocket has an unrecognized value (${requestMessage.type}) out of possible enum values (${Request.RequestMessage.RequestType.values()})")
             }
         } finally {
+            logger.info("Closing connection to $clientSocket")
             clientSocket.close()
         }
     }
 
-    private fun returnCurrentWorldState(clientSocket: Socket) {
-        val heightMapMessage = Heightmap.HeightMapMessage.newBuilder()
+    private fun returnCurrentWorldState() {
+        logger.info("Handling request for current world state")
+
+        val heightMapMessageBuilder = Heightmap.HeightMapMessage.newBuilder()
                 .setX(0)
                 .setY(0)
-                .addHeight(0.2f)
-                .addHeight(0.5f)
-                .addHeight(0.9f)
-                .addHeight(0.1f)
-                .build()
 
-        heightMapMessage.writeTo(clientSocket.outputStream)
+        for(y in 0..5128){
+            for(x in 0..5128){
+                heightMapMessageBuilder.addHeight(x)
+            }
+        }
+
+        val heightMapMessage = heightMapMessageBuilder.build();
+
+        logger.info("Sending $heightMapMessage with ${heightMapMessage.heightCount} heights to $clientSocket")
+
+        heightMapMessage.writeDelimitedTo(clientSocket.outputStream)
     }
 
 
