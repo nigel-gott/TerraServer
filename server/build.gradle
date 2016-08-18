@@ -1,6 +1,10 @@
 group 'com.nigelgott.terra'
 version '0.1.0-SNAPSHOT'
 
+apply plugin: 'gradle-one-jar'
+
+
+
 buildscript {
     ext.kotlin_version = '1.0.3'
 
@@ -9,6 +13,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.github.rholder:gradle-one-jar:1.0.4'
     }
 }
 
@@ -19,6 +24,12 @@ ext {
 apply plugin: 'kotlin'
 apply plugin: 'maven'
 
+task oneJar(type: OneJar) {
+    mainClass = 'com.nigelgott.terra.server.ServerKt'
+    archiveName = 'terra_server.jar'
+}
+
+
 repositories {
     mavenLocal()
     mavenCentral()
@@ -26,12 +37,15 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
-    compile("com.nigelgott.terra:protobufs:0.1.0-SNAPSHOT"){
-        changing=true
+    compile("com.nigelgott.terra:protobufs:0.1.0-SNAPSHOT") {
+        changing = true
     }
     compile group: 'org.slf4j', name: 'slf4j-api', version: slf4j_version
     compile group: 'org.slf4j', name: 'slf4j-simple', version: slf4j_version
 
+}
+
+artifacts {
+    archives oneJar
 }
