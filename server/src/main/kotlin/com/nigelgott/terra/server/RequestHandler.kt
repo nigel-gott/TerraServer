@@ -29,15 +29,16 @@ class RequestHandler(val clientSocket: Socket) : Runnable, Loggable {
                 .setX(0)
                 .setY(0)
 
-        for(y in 0..5128){
-            for(x in 0..5128){
-                heightMapMessageBuilder.addHeight(x)
+        for(y in 0..2048){
+            for(x in 0..2048){
+                val height =  (x % 10)
+                heightMapMessageBuilder.addHeight(height)
             }
         }
 
-        val heightMapMessage = heightMapMessageBuilder.build();
+        val heightMapMessage = heightMapMessageBuilder.build()
 
-        logger.info("Sending $heightMapMessage with ${heightMapMessage.heightCount} heights to $clientSocket")
+        logger.info("Sending heightmap with ${heightMapMessage.heightCount} heights to $clientSocket")
 
         heightMapMessage.writeDelimitedTo(clientSocket.outputStream)
     }

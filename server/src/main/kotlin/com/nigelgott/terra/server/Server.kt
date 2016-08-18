@@ -14,12 +14,10 @@ fun main(args : Array<String>){
 
     val executor = Executors.newCachedThreadPool()
 
-    val worldState = WorldState();
-
     try {
         while(true){
             val clientSocket = serverSocket.accept()
-            clientSocket.tcpNoDelay = true;
+            clientSocket.tcpNoDelay = true
             try {
                 logger.info("New connection opened: $clientSocket")
                 executor.submit(RequestHandler(clientSocket))
