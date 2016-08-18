@@ -14,13 +14,16 @@ fun main(args : Array<String>){
 
     val executor = Executors.newCachedThreadPool()
 
+    val worldState = WorldState()
+    worldState.players["Nigel"] = Player(worldState.chunks[0][0], 10.0f, 10.0f)
+
     try {
         while(true){
             val clientSocket = serverSocket.accept()
             clientSocket.tcpNoDelay = true
             try {
                 logger.info("New connection opened: $clientSocket")
-                executor.submit(RequestHandler(clientSocket))
+                executor.submit(RequestHandler(worldState, clientSocket))
             } catch (e : Exception) {
                 clientSocket.close()
                 throw RuntimeException(e)
