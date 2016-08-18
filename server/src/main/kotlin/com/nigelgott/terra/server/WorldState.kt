@@ -44,11 +44,7 @@ class Chunk(val x: Int, val y: Int) : Loggable {
                         val absNoiseDouble = Math.abs(noiseDouble)
                         val scaleToFillShort =  Math.pow(2.0,16.0) / 2;
                         val scaled = absNoiseDouble * scaleToFillShort
-                        val toShort = scaled.toShort()
-                        if(toShort < 0){
-                            logger().error("wtf generated $toShort from $scaled, $scaleToFillShort, $absNoiseDouble, $noiseDouble")
-                        }
-                        toShort
+                        scaled.toShort()
                     })
         })
         logger().info("Generated chunk for $x,$y")
