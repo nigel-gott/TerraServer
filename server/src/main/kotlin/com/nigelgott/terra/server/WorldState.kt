@@ -1,55 +1,11 @@
 package com.nigelgott.terra.server
 
+import com.nigelgott.terra.server.util.FloatPoint
 import java.util.*
 
-class WorldState {
-
-    val NUM_CHUNKS = 4
-
-    val chunks = initChunks()
-
-    val players = HashMap<String, Player>()
-
-    private fun initChunks(): Array<Array<Chunk>> {
-        return Array(NUM_CHUNKS, { column -> Array(NUM_CHUNKS, { row -> initChunk(column, row) }) })
-    }
-
-    private fun initChunk(column: Int, row: Int): Chunk {
-        return Chunk(column, row)
-    }
-
+class WorldState(val terrain: Array<ShortArray>, val players : HashMap<String, Player>) {
 
 }
-
-class Player(var chunk: Chunk, var x: Float, var y: Float) {
-
-
+class Player(var coord : FloatPoint) {
 }
 
-val noiseGen = OpenSimplexNoise()
-
-class Chunk(val x: Int, val y: Int) : Loggable {
-
-    val HEIGHT_MAP_SIZE = 2048;
-
-
-    val heightmap = initHeightMap()
-
-    private fun initHeightMap(): Array<ShortArray> {
-        val heightmap = Array(HEIGHT_MAP_SIZE, { y ->
-            ShortArray(HEIGHT_MAP_SIZE,
-                    {
-                        x ->
-                        val noiseDouble = noiseGen.eval(x.toDouble() / 24, y.toDouble() / 24)
-                        val absNoiseDouble = Math.abs(noiseDouble)
-                        val scaleToFillShort =  Math.pow(2.0,16.0) / 2;
-                        val scaled = absNoiseDouble * scaleToFillShort
-                        scaled.toShort()
-                    })
-        })
-        logger().info("Generated chunk for $x,$y")
-        return heightmap
-    }
-
-
-}

@@ -1,7 +1,10 @@
 package com.nigelgott.terra.server
 
+import com.nigelgott.terra.server.terrain.TerrainGenerator
+import com.nigelgott.terra.server.util.FloatPoint
 import org.slf4j.LoggerFactory
 import java.net.ServerSocket
+import java.util.*
 import java.util.concurrent.Executors
 
 fun main(args : Array<String>){
@@ -14,8 +17,7 @@ fun main(args : Array<String>){
 
     val executor = Executors.newCachedThreadPool()
 
-    val worldState = WorldState()
-    worldState.players["Nigel"] = Player(worldState.chunks[0][0], 10.0f, 10.0f)
+    val worldState = initializeWorldState(2048 * 10)
 
     try {
         while(true){
@@ -33,5 +35,13 @@ fun main(args : Array<String>){
         executor.shutdown()
         serverSocket.close()
     }
+}
+
+private fun initializeWorldState(terrainSize: Int): WorldState {
+    val terrain = TerrainGenerator(terrainSize).generate()
+    val players = HashMap<String, Player>()
+    players.put("Nigel", Player(FloatPoint(10.0f, 10.0f)))
+    val worldState = WorldState(terrain, players)
+    return worldState
 }
 
