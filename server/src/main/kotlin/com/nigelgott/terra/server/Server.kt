@@ -17,7 +17,7 @@ fun main(args : Array<String>){
 
     val executor = Executors.newCachedThreadPool()
 
-    val worldState = initializeWorldState(2048 * 10)
+    val worldState = initializeWorldState()
 
     try {
         while(true){
@@ -37,8 +37,8 @@ fun main(args : Array<String>){
     }
 }
 
-private fun initializeWorldState(terrainSize: Int): WorldState {
-    val terrain = TerrainGenerator(terrainSize).generate()
+private fun initializeWorldState(): WorldState {
+    val terrain = TerrainGenerator(512 * 40).generate()
     val players = HashMap<String, Player>()
     players.put("Nigel", Player(FloatPoint(10.0f, 10.0f)))
     val worldState = WorldState(terrain, players)

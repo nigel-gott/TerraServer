@@ -1,8 +1,11 @@
 package com.nigelgott.terra.server
 
 import com.nigelgott.terra.protobufs.Request
+import com.nigelgott.terra.protobufs.Request.RequestMessage.RequestType.TERRAIN_CHUNKS
+import com.nigelgott.terra.protobufs.Request.RequestMessage.RequestType.WORLD_STATE
 import com.nigelgott.terra.protobufs.Response
 import com.nigelgott.terra.server.terrain.TerrainChunker
+import sun.plugin.dom.exception.InvalidStateException
 import java.net.Socket
 
 class RequestHandler(val worldState: WorldState, val clientSocket: Socket) : Runnable, Loggable {
@@ -12,36 +15,48 @@ class RequestHandler(val worldState: WorldState, val clientSocket: Socket) : Run
     override fun run() {
         logger.info("RequestHandler handling $clientSocket")
         try {
-            val requestMessage = Request.RequestMessage.parseDelimitedFrom(clientSocket.inputStream)
-            when (requestMessage.type) {
-                Request.RequestMessage.RequestType.INITIAL_WORLD_STATE -> returnCurrentWorldState(requestMessage.playerName)
-                else -> logger.error("Request Message $requestMessage from $clientSocket has an unrecognized value (${requestMessage.type}) out of possible enum values (${Request.RequestMessage.RequestType.values()})")
+            while (!clientSocket.isClosed) {
+                val requestMessage = Request.RequestMessage.parseDelimitedFrom(clientSocket.inputStream)
+                logger.info("Received $requestMessage with type ${requestMessage.type}")
+                val player = lookUpPlayer(requestMessage)
+                when (requestMessage.type) {
+                    WORLD_STATE -> returnWorldParams(player)
+                    TERRAIN_CHUNKS -> returnChunks()
+                    else -> throw IllegalStateException("Request Message $requestMessage from $clientSocket has an unrecognized value (${requestMessage.type}) out of possible enum values (${Request.RequestMessage.RequestType.values()})")
+                }
             }
+        } catch (e : Exception) {
+            logger.error("Request handler for $clientSocket failed with $e")
+            logger.error("Trace: ${e.stackTrace}")
         } finally {
             logger.info("Closing connection to $clientSocket")
             clientSocket.close()
         }
     }
 
-    private fun returnCurrentWorldState(playerName: String) {
-        val player = worldState.players[playerName]
-        if (player == null) {
-            logger.error("No player found with name $playerName")
-            return
-        }
+    private fun lookUpPlayer(requestMessage: Request.RequestMessage): Player {
+        return worldState.players[requestMessage.playerName] ?: throw InvalidStateException("No player found with name ${requestMessage.playerName}");
+    }
 
-        logger.info("Handling request for current world state")
-
-        val chunks = TerrainChunker(worldState.terrain, 2048).getSurroundingChunks(player.coord)
-
-        Response.ResponseMessage
-                .newBuilder()
-                .setType(Response.ResponseMessage.ResponseType.TERRAIN)
-                .setNumOfResponses(chunks.size)
+    private fun returnWorldParams(player: Player) {
+        val worldStateParamsMessage = Response.WorldState.newBuilder()
+                .setWorldSize(worldState.terrain.size)
+                .setPlayerLocation(
+                        Request.FloatCoord.newBuilder()
+                        .setX(player.coord.x)
+                        .setY(player.coord.y))
                 .build()
-                .writeDelimitedTo(clientSocket.outputStream)
+        logger.info("Returning world state of ${worldStateParamsMessage.playerLocation.x},${worldStateParamsMessage.playerLocation.y} size ${worldStateParamsMessage.worldSize}")
+        worldStateParamsMessage.writeDelimitedTo(clientSocket.outputStream)
+    }
 
-        chunks.forEach { chunk -> chunk.writeDelimitedTo(clientSocket.outputStream) }
+    private fun returnChunks() {
+        val chunkRequest = Request.ChunkRequest.parseDelimitedFrom(clientSocket.inputStream)
+
+        logger.info("Handling chunk request with size ${chunkRequest.chunkSize} for coords :")
+        chunkRequest.chunkCoordsList.forEach { logger.info("${it.x},${it.y}") }
+        val chunks = TerrainChunker(worldState.terrain, chunkRequest.chunkSize).getChunks(chunkRequest.chunkCoordsList)
+        chunks.forEach { it.writeDelimitedTo(clientSocket.outputStream) }
     }
 
 

@@ -1,9 +1,9 @@
 package com.nigelgott.terra.server.terrain
 
-import com.nigelgott.terra.protobufs.Heightmap
+import com.nigelgott.terra.protobufs.Chunk
+import com.nigelgott.terra.protobufs.Request
 import com.nigelgott.terra.server.Loggable
 import com.nigelgott.terra.server.logger
-import com.nigelgott.terra.server.util.FloatPoint
 import com.nigelgott.terra.server.util.Point
 
 class TerrainChunker(val heightmap: Array<ShortArray>, val chunkSize: Int) : Loggable {
@@ -18,51 +18,29 @@ class TerrainChunker(val heightmap: Array<ShortArray>, val chunkSize: Int) : Log
         }
     }
 
-    fun getSurroundingChunks(coord: FloatPoint): MutableList<Heightmap.HeightMapMessage> {
-        val chunkCoord = coord.truncate(chunkSize)
-
-        var columnOffsetMin = -1
-        var columnOffsetMax = 1
-        var rowOffsetMin = -1
-        var rowOffsetMax = 1
-
-        if (chunkCoord.x == 0) {
-            rowOffsetMin = 0
-        }
-        if (chunkCoord.x == numChunks) {
-            rowOffsetMax = 0
-        }
-        if (chunkCoord.y == 0) {
-            columnOffsetMin = 0
-        }
-        if (chunkCoord.y == numChunks) {
-            columnOffsetMax = 0
-        }
-
-        val chunks: MutableList<Heightmap.HeightMapMessage> = mutableListOf()
-        for (columnOffset in columnOffsetMin..columnOffsetMax) {
-            for (rowOffset in rowOffsetMin..rowOffsetMax) {
-                val surroundingChunkCoord = Point(rowOffset, columnOffset) + chunkCoord
-                logger.info("Extracting chunk for $surroundingChunkCoord")
-                chunks.add(getChunk(surroundingChunkCoord))
-            }
+    fun getChunks(chunkCoordsList: MutableList<Request.IntCoord>): MutableList<Chunk.ChunkMessage> {
+        val chunks: MutableList<Chunk.ChunkMessage> = mutableListOf()
+        for (requestedChunkCoord in chunkCoordsList) {
+            val chunkCoord = Point(requestedChunkCoord.x, requestedChunkCoord.y)
+            logger.info("Extracting chunk for $chunkCoord")
+            chunks.add(getChunk(chunkCoord))
         }
         return chunks
     }
 
-    private fun getChunk(chunkCoord: Point): Heightmap.HeightMapMessage {
-        val heightMapMessageBuilder = Heightmap.HeightMapMessage.newBuilder()
+    private fun getChunk(chunkCoord: Point): Chunk.ChunkMessage {
+        val chunkBuilder = Chunk.ChunkMessage.newBuilder()
                 .setX(chunkCoord.x)
                 .setY(chunkCoord.y)
 
         for (y in 0..chunkSize - 1) {
             for (x in 0..chunkSize - 1) {
                 val height = heightmap[chunkCoord.y * chunkSize + y][chunkCoord.x * chunkSize + x].toInt()
-                heightMapMessageBuilder.addHeight(height)
+                chunkBuilder.addHeights(height)
             }
         }
 
-        return heightMapMessageBuilder.build()
+        return chunkBuilder.build()
     }
 
 }
