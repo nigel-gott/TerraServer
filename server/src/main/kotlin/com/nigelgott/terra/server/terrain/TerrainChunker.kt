@@ -13,7 +13,7 @@ class TerrainChunker(val heightmap: Array<ShortArray>, val chunkSize: Int) : Log
     val numChunks = heightmap.size / chunkSize
 
     init {
-        if (numChunks * chunkSize != heightmap.size) {
+        if (numChunks * chunkSize > heightmap.size) {
             throw IllegalStateException("Cannot split up heightmap with size ${heightmap.size} into squares of size $chunkSize")
         }
     }

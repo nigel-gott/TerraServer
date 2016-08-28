@@ -25,8 +25,8 @@ class TerrainGenerator(val size: Int) : Loggable {
     }
 
     private fun generateHeightForCoord(coord: Point): Short {
-        val noiseDouble = noiseGen.eval(coord.x.toDouble() / 24, coord.y.toDouble() / 24)
-        val absNoiseDouble = Math.abs(noiseDouble)
+        val noiseDouble = noiseGen.eval(coord.x.toDouble() / 3000, coord.y.toDouble() / 3000)
+        val absNoiseDouble = noiseDouble + 1
         val scaleToFillShort = Math.pow(2.0, 16.0) / 2
         val scaled = absNoiseDouble * scaleToFillShort
         return scaled.toShort()
